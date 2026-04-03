@@ -78,7 +78,7 @@ const SERVICES: Service[] = [
 	{ key: "adaptation", label: "Адаптация креатива", category: "Графика", unit: "шт", price: 10 },
 	{ key: "resize", label: "Ресайз баннера", category: "Графика", unit: "шт", price: 10 },
 
-	{ key: "neuro_video", label: "Нейро-видео", category: "Видео", unit: "сек", price: 10 },
+	{ key: "neuro_video", label: "Нейро-видео", category: "Видео", unit: "шт", price: 20 },
 	{ key: "motion", label: "Моушен графика", category: "Видео", unit: "сек", price: 3 },
 	{ key: "editing", label: "Монтаж", category: "Видео", unit: "сек", price: 5 },
 	{ key: "subtitles", label: "Субтитры", category: "Видео", unit: "сек", price: 2 },
@@ -168,6 +168,25 @@ function formatMultiplier(value: number): string {
 	return `×${value}`
 }
 
+function getQtyLabel(unit: string): string {
+	if (unit === "сек") {
+		return "Секунды"
+	}
+
+	if (unit === "мин") {
+		return "Минуты"
+	}
+
+	return "Количество"
+}
+
+function getQtyStep(unit: string): string {
+	if (unit === "мин") {
+		return "0.1"
+	}
+
+	return "1"
+}
 export default function PriceCalculatorPage() {
 	const [rows, setRows] = useState<CalculationRow[]>([
 		{ id: crypto.randomUUID(), service: "static", qty: 1 },
@@ -251,7 +270,7 @@ export default function PriceCalculatorPage() {
 											<div className="space-y-2">
 												<Label>Услуга #{index + 1}</Label>
 												<Select value={row.service} onValueChange={(value) => updateRow(row.id, { service: value as ServiceKey })}>
-													<SelectTrigger>
+													<SelectTrigger className="rounded-md">
 														<SelectValue placeholder="Выбери услугу" />
 													</SelectTrigger>
 													<SelectContent className="max-h-[420px]">
@@ -272,15 +291,16 @@ export default function PriceCalculatorPage() {
 											</div>
 
 											<div className="space-y-2">
-												<Label>Количество</Label>
-												<Input
-													type="number"
-													min="0"
-													step="0.01"
-													value={Number.isNaN(row.qty) ? "" : row.qty}
-													onChange={(event) => updateRow(row.id, { qty: Number(event.target.value) || 0 })}
-												/>
-											</div>
+                                                <Label>{getQtyLabel(service.unit)}</Label>
+                                                <Input
+                                                    className="rounded-xl"
+                                                    type="number"
+                                                    min="0"
+                                                    step={getQtyStep(service.unit)}
+                                                    value={Number.isNaN(row.qty) ? "" : row.qty}
+                                                    onChange={(event) => updateRow(row.id, { qty: Number(event.target.value) || 0 })}
+                                                />
+                                            </div>
 
 											<div className="space-y-2">
 												<Label>Ставка</Label>
@@ -337,7 +357,7 @@ export default function PriceCalculatorPage() {
 							<div className="space-y-2">
 								<Label>Сложность</Label>
 								<Select value={complexity} onValueChange={(value) => setComplexity(value as ComplexityKey)}>
-									<SelectTrigger>
+									<SelectTrigger className="rounded-md">
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
@@ -353,7 +373,7 @@ export default function PriceCalculatorPage() {
 							<div className="space-y-2">
 								<Label>Срочность</Label>
 								<Select value={urgency} onValueChange={(value) => setUrgency(value as UrgencyKey)}>
-									<SelectTrigger>
+									<SelectTrigger className="rounded-md">
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
@@ -387,6 +407,7 @@ export default function PriceCalculatorPage() {
 							<div className="space-y-2">
 								<Label>Минимальный чек</Label>
 								<Input
+                                    className="rounded-md"
 									type="number"
 									min="0"
 									step="1"
