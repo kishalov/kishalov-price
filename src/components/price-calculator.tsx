@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
@@ -187,14 +186,14 @@ function getQtyStep(unit: string): string {
 
 	return "1"
 }
+
 export default function PriceCalculatorPage() {
 	const [rows, setRows] = useState<CalculationRow[]>([
 		{ id: crypto.randomUUID(), service: "static", qty: 1 },
 	])
 	const [complexity, setComplexity] = useState<ComplexityKey>("simple")
 	const [urgency, setUrgency] = useState<UrgencyKey>("none")
-	const [applyArtDirectionMarkup, setApplyArtDirectionMarkup] = useState<boolean>(false)
-	const [applyExecutorShare, setApplyExecutorShare] = useState<boolean>(false)
+	const [isDesignerWork, setIsDesignerWork] = useState<boolean>(false)
 	const [minimumCheck, setMinimumCheck] = useState<number>(0)
 
 	const baseSubtotal = useMemo(() => {
@@ -207,20 +206,22 @@ export default function PriceCalculatorPage() {
 	const calculated = useMemo(() => {
 		const complexityValue = COMPLEXITY[complexity].value
 		const urgencyValue = URGENCY[urgency].value
+
 		const afterComplexity = baseSubtotal * complexityValue
 		const afterUrgency = afterComplexity * urgencyValue
-		const afterArtDirection = applyArtDirectionMarkup ? afterUrgency * 1.6 : afterUrgency
-		const afterExecutorShare = applyExecutorShare ? afterArtDirection * 0.4 : afterArtDirection
-		const total = Math.max(afterExecutorShare, minimumCheck || 0)
+		const total = Math.max(afterUrgency, minimumCheck || 0)
+
+		const yourIncome = isDesignerWork ? total * 0.6 : total
+		const designerIncome = isDesignerWork ? total * 0.4 : 0
 
 		return {
 			afterComplexity,
 			afterUrgency,
-			afterArtDirection,
-			afterExecutorShare,
 			total,
+			yourIncome,
+			designerIncome,
 		}
-	}, [applyArtDirectionMarkup, applyExecutorShare, baseSubtotal, complexity, minimumCheck, urgency])
+	}, [baseSubtotal, complexity, urgency, minimumCheck, isDesignerWork])
 
 	function updateRow(id: string, patch: Partial<CalculationRow>) {
 		setRows((prev) => prev.map((row) => (row.id === id ? { ...row, ...patch } : row)))
@@ -244,8 +245,7 @@ export default function PriceCalculatorPage() {
 		setRows([{ id: crypto.randomUUID(), service: "static", qty: 1 }])
 		setComplexity("simple")
 		setUrgency("none")
-		setApplyArtDirectionMarkup(false)
-		setApplyExecutorShare(false)
+		setIsDesignerWork(false)
 		setMinimumCheck(0)
 	}
 
@@ -256,7 +256,7 @@ export default function PriceCalculatorPage() {
 					<CardHeader>
 						<CardTitle className="text-2xl">Калькулятор прайса</CardTitle>
 						<CardDescription>
-							Выбирай услуги, указывай количество и сразу получай сумму по своему прайсу.
+							Выбирай услуги, указывай объём и сразу получай сумму по своему прайсу.
 						</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-6">
@@ -270,7 +270,7 @@ export default function PriceCalculatorPage() {
 											<div className="space-y-2">
 												<Label>Услуга #{index + 1}</Label>
 												<Select value={row.service} onValueChange={(value) => updateRow(row.id, { service: value as ServiceKey })}>
-													<SelectTrigger className="rounded-md">
+													<SelectTrigger className="rounded-xl">
 														<SelectValue placeholder="Выбери услугу" />
 													</SelectTrigger>
 													<SelectContent className="max-h-[420px]">
@@ -291,20 +291,20 @@ export default function PriceCalculatorPage() {
 											</div>
 
 											<div className="space-y-2">
-                                                <Label>{getQtyLabel(service.unit)}</Label>
-                                                <Input
-                                                    className="rounded-xl"
-                                                    type="number"
-                                                    min="0"
-                                                    step={getQtyStep(service.unit)}
-                                                    value={Number.isNaN(row.qty) ? "" : row.qty}
-                                                    onChange={(event) => updateRow(row.id, { qty: Number(event.target.value) || 0 })}
-                                                />
-                                            </div>
+												<Label>{getQtyLabel(service.unit)}</Label>
+												<Input
+													className="rounded-xl"
+													type="number"
+													min="0"
+													step={getQtyStep(service.unit)}
+													value={Number.isNaN(row.qty) ? "" : row.qty}
+													onChange={(event) => updateRow(row.id, { qty: Number(event.target.value) || 0 })}
+												/>
+											</div>
 
 											<div className="space-y-2">
 												<Label>Ставка</Label>
-												<div className="flex h-10 items-center rounded-md border px-3 text-sm">
+												<div className="flex h-10 items-center rounded-xl border px-3 text-sm">
 													{formatMoney(service.price)} / {service.unit}
 												</div>
 											</div>
@@ -357,7 +357,7 @@ export default function PriceCalculatorPage() {
 							<div className="space-y-2">
 								<Label>Сложность</Label>
 								<Select value={complexity} onValueChange={(value) => setComplexity(value as ComplexityKey)}>
-									<SelectTrigger className="rounded-md">
+									<SelectTrigger className="rounded-xl">
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
@@ -373,7 +373,7 @@ export default function PriceCalculatorPage() {
 							<div className="space-y-2">
 								<Label>Срочность</Label>
 								<Select value={urgency} onValueChange={(value) => setUrgency(value as UrgencyKey)}>
-									<SelectTrigger className="rounded-md">
+									<SelectTrigger className="rounded-xl">
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
@@ -389,25 +389,19 @@ export default function PriceCalculatorPage() {
 							<div className="space-y-3 rounded-xl border p-4">
 								<div className="flex items-center justify-between gap-4">
 									<div className="space-y-1">
-										<div className="text-sm font-medium">Арт-директорская наценка</div>
-										<div className="text-sm text-muted-foreground">Прибавить 60% сверху</div>
+										<div className="text-sm font-medium">Исполняет дизайнер</div>
+										<div className="text-sm text-muted-foreground">
+											Ты получаешь 60%, дизайнер — 40%
+										</div>
 									</div>
-									<Switch checked={applyArtDirectionMarkup} onCheckedChange={setApplyArtDirectionMarkup} />
-								</div>
-
-								<div className="flex items-center justify-between gap-4">
-									<div className="space-y-1">
-										<div className="text-sm font-medium">Доля исполнителя</div>
-										<div className="text-sm text-muted-foreground">Вычесть 60% и оставить 40%</div>
-									</div>
-									<Switch checked={applyExecutorShare} onCheckedChange={setApplyExecutorShare} />
+									<Switch checked={isDesignerWork} onCheckedChange={setIsDesignerWork} />
 								</div>
 							</div>
 
 							<div className="space-y-2">
 								<Label>Минимальный чек</Label>
 								<Input
-                                    className="rounded-md"
+									className="rounded-xl"
 									type="number"
 									min="0"
 									step="1"
@@ -428,28 +422,16 @@ export default function PriceCalculatorPage() {
 								<span className="text-muted-foreground">Базовая сумма</span>
 								<span>{formatMoney(baseSubtotal)}</span>
 							</div>
+
 							<div className="flex items-center justify-between text-sm">
 								<span className="text-muted-foreground">После сложности</span>
 								<span>{formatMoney(calculated.afterComplexity)}</span>
 							</div>
+
 							<div className="flex items-center justify-between text-sm">
 								<span className="text-muted-foreground">После срочности</span>
 								<span>{formatMoney(calculated.afterUrgency)}</span>
 							</div>
-
-							{applyArtDirectionMarkup ? (
-								<div className="flex items-center justify-between text-sm">
-									<span className="text-muted-foreground">После наценки ×1.6</span>
-									<span>{formatMoney(calculated.afterArtDirection)}</span>
-								</div>
-							) : null}
-
-							{applyExecutorShare ? (
-								<div className="flex items-center justify-between text-sm">
-									<span className="text-muted-foreground">После доли ×0.4</span>
-									<span>{formatMoney(calculated.afterExecutorShare)}</span>
-								</div>
-							) : null}
 
 							{minimumCheck > 0 ? (
 								<div className="flex items-center justify-between text-sm">
@@ -461,15 +443,29 @@ export default function PriceCalculatorPage() {
 							<Separator />
 
 							<div className="space-y-2">
-								<div className="text-sm text-muted-foreground">Финальная сумма</div>
+								<div className="text-sm text-muted-foreground">Цена для клиента</div>
 								<div className="text-3xl font-semibold tracking-tight">{formatMoney(calculated.total)}</div>
+
 								<div className="flex flex-wrap gap-2 pt-1">
 									<Badge variant="secondary">{COMPLEXITY[complexity].label}</Badge>
 									<Badge variant="secondary">{URGENCY[urgency].label}</Badge>
-									{applyArtDirectionMarkup ? <Badge>Наценка 60%</Badge> : null}
-									{applyExecutorShare ? <Badge variant="outline">Доля 40%</Badge> : null}
+									{isDesignerWork ? <Badge>Делает дизайнер</Badge> : <Badge variant="outline">Делаю сам</Badge>}
 								</div>
 							</div>
+
+							{isDesignerWork ? (
+								<>
+									<Separator />
+									<div className="flex items-center justify-between text-sm">
+										<span className="text-muted-foreground">Твоя часть</span>
+										<span>{formatMoney(calculated.yourIncome)}</span>
+									</div>
+									<div className="flex items-center justify-between text-sm">
+										<span className="text-muted-foreground">Дизайнеру</span>
+										<span>{formatMoney(calculated.designerIncome)}</span>
+									</div>
+								</>
+							) : null}
 						</CardContent>
 					</Card>
 				</div>
