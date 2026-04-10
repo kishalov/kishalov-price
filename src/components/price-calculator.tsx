@@ -17,6 +17,7 @@ type ServiceKey =
 	| "resize"
 	| "neuro_video"
 	| "motion"
+	| "motion_light"
 	| "editing"
 	| "subtitles"
 	| "voiceover"
@@ -79,6 +80,7 @@ const SERVICES: Service[] = [
 
 	{ key: "neuro_video", label: "Нейро-видео", category: "Видео", unit: "шт", price: 20 },
 	{ key: "motion", label: "Моушен графика", category: "Видео", unit: "сек", price: 3 },
+	{ key: "motion_light", label: "Упрощённый моушен / сборка видео", category: "Видео", unit: "сек", price: 1.5 },
 	{ key: "editing", label: "Монтаж", category: "Видео", unit: "сек", price: 5 },
 	{ key: "subtitles", label: "Субтитры", category: "Видео", unit: "сек", price: 2 },
 	{ key: "voiceover", label: "Озвучка (AI voiceover)", category: "Видео", unit: "мин", price: 5 },
